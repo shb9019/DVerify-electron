@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>DVerify</title>
+  </head>
+  <body>
+      <p>Number of Nodes : <span id="num_nodes"></span></p>
+      <p>Current Central Leader : <span id="central_leader"></span></p>
+      <p>Cluster Size : <span id="cluster_size"></span></p>
+      <div id="clusters">
+      </div>
+    
+    <script>
+      var current_lines = 0;
+      var num_nodes = 0;
+      var num_clusters = 0;
+      var cluster_size = 0;
+      var cluster_leader = 0;
+      var cluster_free_data = [];
+      var iter = 0;
+
+      function readTextFile(file) {
+        var rawFile = new XMLHttpRequest();
+        rawFile.open("GET", file, false);
+        rawFile.onreadystatechange = function () {
+          if (rawFile.readyState === 4) {
+            if (rawFile.status === 200 || rawFile.status == 0) {
+              var text = rawFile.responseText;
+              var curr_line = 1;
+              var curr_line_text = "";
+              
+              for(var i = 0; i < text.length; i++) {
+                if(text[i] === '\n') {
+                  if(curr_line > current_lines) {
+                    handle_line(curr_line_text);
+                  }
+                  curr_line++;
+                  curr_line_text = "";
+                }
+                else {
+                  curr_line_text += text[i];
+                }
+              }
+              
+              if (curr_line > current_lines && curr_line_text != "") {
+                handle_line(curr_line_text)
+                curr_line++;
+              }
+              current_lines = curr_line - 1;
+            }
+          }
+        }
+        rawFile.send(null);
+      }
+      
+      setInterval(() => {
+        readTextFile('../output.txt');
+      }, 100);
+      
+      
+      function render_cluster_stuff(num_clusters, cluster_size) {
+        var html = "";
+        for(var i=1; i<num_clusters+1; i++) {
+          html += "<div id='cluster_" + i + "'> <h3> Cluster " + i + "</h3>";
+            for(var j=1; j<cluster_size+1;j++) {
+              html += "<div id='cluster_" + i + "_" + j + "' style='margin: 10px; text-align: center; padding-top: 50px; display: inline-block; border: 1px solid black; width: 100px; height: 100px'>" +
+                    "</div>";
+            }
+          html += "<div/>";
+          cluster_free_data[i] = cluster_size;
+        }
+        document.getElementById("clusters").innerHTML += html;
+      }
+
+      function handle_line(text) {
+        console.log(text);
+        var code = text.substr(0, 2);
+
+        if(code == "NN") {
+          document.getElementById("num_nodes").innerHTML = text.substr(3,text.length - 3);
+          num_nodes = parseInt(text.substr(3, text.length - 3));
+        }
+        else if(code == "CL") {
+          document.getElementById("central_leader").innerHTML = text.substr(3, text.length - 3);
+          cluster_leader = parseInt(text.substr(3, text.length - 3));
+        }
+        else if(code == "CS") {
+          document.getElementById("cluster_size").innerHTML = text.substr(3, text.length - 3);
+          cluster_size = parseInt(text.substr(3, text.length - 3));
+          render_cluster_stuff(num_nodes / cluster_size, cluster_size);
+        }
+        else if(code == "CA") {
+          var port_no, cluster_no;
+          var idx = 3;
+          var port = "", cluster_no = "";
+          for (; text[idx] != ' '; idx++) {
+            port += text[idx];
+          }
+          port = parseInt(port);
+          idx++;
+          for (; idx < text.length; idx++) {
+            cluster_no += text[idx];
+          }
+          cluster_no = parseInt(cluster_no);
+          cluster_no++;
+          var char_id = "cluster_" + cluster_no + "_" + (cluster_size + 1 - cluster_free_data[cluster_no]);
+          console.log(char_id);
+          document.getElementById(char_id).innerHTML = port;
+          cluster_free_data[cluster_no]--;
+        }
+        else if(code == "LL") {
+          var idx = 3;
+          var port = "", cluster_no = "";
+          for (; text[idx] != ' '; idx++) {
+            port += text[idx];
+          }
+          idx++;
+          for (; idx < text.length; idx++) {
+            cluster_no += text[idx];
+          }
+          cluster_no = parseInt(cluster_no);
+          cluster_no++;
+          
+          for (var i = 1; i < cluster_size + 1; i++) {
+            document.getElementById("cluster_" + cluster_no + "_" + String(i)).style.color = "black";
+          }
+
+          for(var i=1; i<cluster_size+1; i++) {
+            if(document.getElementById("cluster_" + cluster_no + "_" + String(i)).innerHTML == port) {
+              document.getElementById("cluster_" + cluster_no + "_" + String(i)).style.color = "red";
+            }
+          }
+        }
+        else if(code == "CR") {
+          console.log("Clearing");
+          var num_clusters = num_nodes/cluster_size;
+          for(var i=1; i<num_clusters+1; i++) {
+            cluster_free_data[i] = cluster_size;
+          }
+          for(var cluster_no=1; cluster_no < num_clusters+1; cluster_no++) {
+            for (var i = 1; i < cluster_size + 1; i++) {
+              document.getElementById("cluster_" + cluster_no + "_" + String(i)).style.color = "black";
+              document.getElementById("cluster_" + cluster_no + "_" + String(i)).innerHTML = ""
+            }
+          }
+          console.log(cluster_free_data);
+        }
+      }
+    </script>
+  </body>
+</html>
