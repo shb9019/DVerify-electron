@@ -5,6 +5,8 @@
     <title>DVerify</title>
   </head>
   <body>
+      <div id="log" style="overflow: scroll; padding: 5px; border: 1px solid black; background-color: white; position: fixed; top: 0; right: 0; width: 450px; height: 300px;">
+      </div>
       <p>Number of Nodes : <span id="num_nodes"></span></p>
       <p>Current Central Leader : <span id="central_leader"></span></p>
       <p>Cluster Size : <span id="cluster_size"></span></p>
@@ -64,7 +66,7 @@
         for(var i=1; i<num_clusters+1; i++) {
           html += "<div id='cluster_" + i + "'> <h3> Cluster " + i + "</h3>";
             for(var j=1; j<cluster_size+1;j++) {
-              html += "<div id='cluster_" + i + "_" + j + "' style='margin: 10px; text-align: center; padding-top: 50px; display: inline-block; border: 1px solid black; width: 100px; height: 100px'>" +
+              html += "<div id='cluster_" + i + "_" + j + "' style='margin: 10px; padding: 30px; text-align: center; display: inline-block; border: 1px solid black; width: 50px; height: 50px'>" +
                     "</div>";
             }
           html += "<div/>";
@@ -80,15 +82,18 @@
         if(code == "NN") {
           document.getElementById("num_nodes").innerHTML = text.substr(3,text.length - 3);
           num_nodes = parseInt(text.substr(3, text.length - 3));
+          document.getElementById("log").innerHTML += "The number of nodes in network is " + (num_nodes) + "<br/>";
         }
         else if(code == "CL") {
           document.getElementById("central_leader").innerHTML = text.substr(3, text.length - 3);
           cluster_leader = parseInt(text.substr(3, text.length - 3));
+          document.getElementById("log").innerHTML += "The new central leader of network is " + (cluster_leader) + "<br/>";
         }
         else if(code == "CS") {
           document.getElementById("cluster_size").innerHTML = text.substr(3, text.length - 3);
           cluster_size = parseInt(text.substr(3, text.length - 3));
           render_cluster_stuff(num_nodes / cluster_size, cluster_size);
+          document.getElementById("log").innerHTML += "The individual cluster size of network is " + (cluster_size) + "<br/>";
         }
         else if(code == "CA") {
           var port_no, cluster_no;
@@ -105,9 +110,9 @@
           cluster_no = parseInt(cluster_no);
           cluster_no++;
           var char_id = "cluster_" + cluster_no + "_" + (cluster_size + 1 - cluster_free_data[cluster_no]);
-          console.log(char_id);
           document.getElementById(char_id).innerHTML = port;
           cluster_free_data[cluster_no]--;
+          document.getElementById("log").innerHTML += "Node " + (port) + " belongs to " + (cluster_no) + "<br/>";
         }
         else if(code == "LL") {
           var idx = 3;
@@ -131,6 +136,7 @@
               document.getElementById("cluster_" + cluster_no + "_" + String(i)).style.color = "red";
             }
           }
+          document.getElementById("log").innerHTML += "Node " + (port) + " is local leader of cluster " + (cluster_no) + "<br/>";
         }
         else if(code == "CR") {
           console.log("Clearing");
@@ -145,6 +151,7 @@
             }
           }
           console.log(cluster_free_data);
+          document.getElementById("log").innerHTML += "<br/> Next Iteration begins <br/> <br/>";
         }
       }
     </script>
